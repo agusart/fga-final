@@ -19,6 +19,7 @@ func StartRouter(db *gorm.DB) *gin.Engine {
 	router.Use(middleware.RequestMustBeJSON()).POST("/users/register", userController.Register())
 	router.Use(middleware.RequestMustBeJSON()).POST("/users/login", userController.Login())
 	router.Use(middleware.RequestMustBeJSON(), middleware.Authentication()).PUT("/users", userController.Update())
+	router.Use(middleware.Authentication()).DELETE("/users", userController.Delete())
 
 	return router
 }

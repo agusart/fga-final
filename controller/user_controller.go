@@ -207,3 +207,33 @@ func (controller *userController) Update() gin.HandlerFunc {
 
 	}
 }
+
+func (controller *userController) Delete() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var user model.User
+		id := c.MustGet(middleware.UserDataKey).(jwt.MapClaims)["id"]
+
+		err := controller.db.Where("id = ?", id).Take(&user).Error
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+				"error":   InternalServerError,
+			})
+
+			return
+		}
+
+		if err := controller.db.Delete(&user).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+				"error":   InternalServerError,
+			})
+
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Your account has successfully deleted",
+		})
+	}
+}
