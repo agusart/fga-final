@@ -1,6 +1,7 @@
 package database
 
 import (
+	"fga-final/model"
 	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -29,7 +30,7 @@ func StartDB(config PGConfig) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	//db.Debug().AutoMigrate(model.Order{}, model.Item{})
+	db.Debug().AutoMigrate(model.User{}, model.SocialMedia{}, model.Photo{}, model.Comment{})
 
 	return db, nil
 }
