@@ -2,6 +2,7 @@ package main
 
 import (
 	"fga-final/database"
+	"fga-final/router"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"log"
@@ -22,8 +23,11 @@ func main() {
 		Password: os.Getenv("POSTGRES_PASSWORD"),
 	}
 
-	_, err = database.StartDB(dbConfig)
+	db, err := database.StartDB(dbConfig)
 	if err != nil {
 		log.Fatalln("can't open database ", err)
 	}
+
+	r := router.StartRouter(db)
+	r.Run(":8080")
 }
