@@ -9,4 +9,6 @@ type Comment struct {
 	Message   string `json:"message" valid:"required~message is blank"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	User      User  `valid:"-"`
+	Photo     Photo `valid:"-"`
 }
