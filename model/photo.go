@@ -10,4 +10,5 @@ type Photo struct {
 	UserID    uint
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	User      User `valid:"-"`
 }

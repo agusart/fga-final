@@ -7,11 +7,14 @@ import (
 	"strings"
 )
 
-const secret = "secret"
+const (
+	secret = "secret"
+	IdKey  = "id"
+)
 
 func GenerateToken(userID uint) (string, error) {
 	claims := jwt.MapClaims{
-		"id": userID,
+		IdKey: userID,
 	}
 
 	parseToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
