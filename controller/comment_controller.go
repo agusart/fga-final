@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -38,8 +39,18 @@ func (controller *commentController) Create() gin.HandlerFunc {
 			return
 		}
 
+		comment.UserID = GetUserIDFromContext(c)
 		err := controller.db.Create(&comment).Error
 		if err != nil {
+			if strings.Contains(err.Error(), "fk_comments_photo") {
+				c.JSON(http.StatusNotFound, gin.H{
+					"message": "photo not found",
+					"error":   NotFoundError,
+				})
+
+				return
+			}
+
 			c.JSON(http.StatusBadRequest, gin.H{
 				"message": err.Error(),
 				"error":   BadRequestError,
@@ -128,7 +139,7 @@ func (controller *commentController) Delete() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var comment model.Comment
 
-		photoID := c.Param("photoID")
+		photoID := c.Param("commentID")
 		if photoID == "" {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"message": "invalid parameter",
@@ -162,7 +173,7 @@ func (controller *commentController) Delete() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"message": "Your photo has been successfully deleted",
+			"message": "Your comment has been successfully deleted",
 		})
 
 	}
@@ -176,7 +187,7 @@ type getCommentResponse struct {
 	CreatedAt string                  `json:"created_at"`
 	UpdatedAt string                  `json:"updated_at"`
 	User      getCommentUserResponse  `json:"User"`
-	Photo     getCommentPhotoResponse `json:"photo"`
+	Photo     getCommentPhotoResponse `json:"Photo"`
 }
 
 type getCommentUserResponse struct {
@@ -196,12 +207,13 @@ type getCommentPhotoResponse struct {
 func (controller *commentController) Get() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var comments []model.Comment
-		var commentResponses []getCommentResponse
+		commentResponses := make([]getCommentResponse, 0)
 
 		err := controller.db.
+			Joins("inner join users on users.id = comments.user_id and users.deleted_at is null").
+			Joins("inner join photos on photos.id = comments.photo_id and photos.deleted_at is null").
 			Preload("User").
 			Preload("Photo").
-			Where("userID = ?", GetUserIDFromContext(c)).
 			Find(&comments).Error
 
 		if err != nil {
@@ -242,5 +254,7 @@ func (controller *commentController) Get() gin.HandlerFunc {
 
 			commentResponses = append(commentResponses, commentResponse)
 		}
+
+		c.JSON(http.StatusOK, commentResponses)
 	}
 }

@@ -1,6 +1,10 @@
 package model
 
-import "time"
+import (
+	"github.com/asaskevich/govalidator"
+	"gorm.io/gorm"
+	"time"
+)
 
 type Photo struct {
 	ID        uint   `gorm:"primaryKey"`
@@ -10,5 +14,24 @@ type Photo struct {
 	UserID    uint
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt
 	User      User `valid:"-"`
+}
+
+func (photo *Photo) BeforeUpdate(tx *gorm.DB) (err error) {
+	_, err = govalidator.ValidateStruct(photo)
+	if err != nil {
+		return err
+	}
+
+	return err
+}
+
+func (photo *Photo) BeforeCreate(tx *gorm.DB) (err error) {
+	_, err = govalidator.ValidateStruct(photo)
+	if err != nil {
+		return err
+	}
+
+	return err
 }

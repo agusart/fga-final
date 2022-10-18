@@ -52,7 +52,7 @@ func (controller *photosController) Create() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, createPhotoResponse{
+		c.JSON(http.StatusCreated, createPhotoResponse{
 			ID:        photo.ID,
 			Title:     photo.Title,
 			Caption:   photo.Caption,
@@ -118,7 +118,10 @@ func (controller *photosController) GetAll() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var photos []model.Photo
 
-		err := controller.db.Find(&photos).Error
+		err := controller.db.
+			Joins("inner join users on users.id = photos.user_id and users.deleted_at is null").
+			Preload("User").Find(&photos).Error
+
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"message": err.Error(),
