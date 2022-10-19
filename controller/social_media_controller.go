@@ -32,15 +32,22 @@ func (controller *socialMediaController) Delete() gin.HandlerFunc {
 			return
 		}
 
-		controller.db.
+		if controller.db.
 			Preload("User").
-			Where("user_id = ?", GetUserIDFromContext(c)).
-			First(&socialMedia)
-
-		if socialMedia.UserID != GetUserIDFromContext(c) {
+			Where("id = ?", photoID).
+			First(&socialMedia).RowsAffected == 0 {
 			c.JSON(http.StatusNotFound, gin.H{
 				"message": "item not found",
 				"error":   NotFoundError,
+			})
+
+			return
+		}
+
+		if socialMedia.UserID != GetUserIDFromContext(c) {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"message": "unauthorized",
+				"error":   UnauthorizedError,
 			})
 
 			return
@@ -93,7 +100,7 @@ func (controller *socialMediaController) Create() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, createSocialMediaResponse{
+		c.JSON(http.StatusCreated, createSocialMediaResponse{
 			ID:             socialMedia.ID,
 			Name:           socialMedia.Name,
 			SocialMediaURL: socialMedia.SocialMediaURL,
@@ -125,16 +132,22 @@ func (controller *socialMediaController) Update() gin.HandlerFunc {
 			return
 		}
 
-		controller.db.
-			Joins("inner join users on users.id = social_media.user_id and users.deleted_at is null").
+		if controller.db.
 			Preload("User").
-			Where("user_id = ?", GetUserIDFromContext(c)).
-			First(&socialMedia)
-
-		if socialMedia.UserID != GetUserIDFromContext(c) {
+			Where("id = ?", socialMediaID).
+			First(&socialMedia).RowsAffected == 0 {
 			c.JSON(http.StatusNotFound, gin.H{
 				"message": "item not found",
 				"error":   NotFoundError,
+			})
+
+			return
+		}
+
+		if socialMedia.UserID != GetUserIDFromContext(c) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"message": "unauthorized",
+				"error":   UnauthorizedError,
 			})
 
 			return
@@ -174,7 +187,7 @@ type getSocialMediaResponse struct {
 	ID             uint                       `json:"id"`
 	Name           string                     `json:"name"`
 	SocialMediaURL string                     `json:"social_media_url"`
-	UserID         uint                       `json:"userId"`
+	UserID         uint                       `json:"UserId"`
 	CreatedAt      string                     `json:"createdAt"`
 	UpdatedAt      string                     `json:"updatedAt"`
 	User           getSocialMediaUserResponse `json:"User"`

@@ -83,7 +83,7 @@ func (controller *photosController) GetMine() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var photos []model.Photo
 
-		err := controller.db.Where("userID = ?", GetUserIDFromContext(c)).Find(&photos).Error
+		err := controller.db.Where("user_id = ?", GetUserIDFromContext(c)).Find(&photos).Error
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"message": err.Error(),
@@ -175,15 +175,22 @@ func (controller *photosController) Update() gin.HandlerFunc {
 			return
 		}
 
-		controller.db.
+		if controller.db.
 			Preload("User").
 			Where("id = ?", photoID).
-			First(&photo)
-
-		if photo.UserID != GetUserIDFromContext(c) {
+			First(&photo).RowsAffected == 0 {
 			c.JSON(http.StatusNotFound, gin.H{
 				"message": "item not found",
 				"error":   NotFoundError,
+			})
+
+			return
+		}
+
+		if photo.UserID != GetUserIDFromContext(c) {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"message": "unauthorized",
+				"error":   UnauthorizedError,
 			})
 
 			return
@@ -234,17 +241,22 @@ func (controller *photosController) Delete() gin.HandlerFunc {
 			return
 		}
 
-		controller.db.
+		if controller.db.
 			Preload("User").
 			Where("id = ?", photoID).
-			First(&photo)
-
-		if photo.UserID != GetUserIDFromContext(c) {
+			First(&photo).RowsAffected == 0 {
 			c.JSON(http.StatusNotFound, gin.H{
 				"message": "item not found",
 				"error":   NotFoundError,
 			})
+			return
+		}
 
+		if photo.UserID != GetUserIDFromContext(c) {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"message": "unauthorized",
+				"error":   UnauthorizedError,
+			})
 			return
 		}
 

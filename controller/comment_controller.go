@@ -59,7 +59,7 @@ func (controller *commentController) Create() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusOK, createCommentResponse{
+		c.JSON(http.StatusCreated, createCommentResponse{
 			ID:        comment.ID,
 			Message:   comment.Message,
 			PhotoID:   comment.PhotoID,
@@ -91,15 +91,22 @@ func (controller *commentController) Update() gin.HandlerFunc {
 			return
 		}
 
-		controller.db.
+		if controller.db.
 			Preload("User").
 			Where("id = ?", commentID).
-			First(&comment)
-
-		if comment.UserID != GetUserIDFromContext(c) {
+			First(&comment).RowsAffected == 0 {
 			c.JSON(http.StatusNotFound, gin.H{
 				"message": "item not found",
 				"error":   NotFoundError,
+			})
+
+			return
+		}
+
+		if comment.UserID != GetUserIDFromContext(c) {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"message": "unauthorized to update",
+				"error":   UnauthorizedError,
 			})
 
 			return
@@ -139,8 +146,8 @@ func (controller *commentController) Delete() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var comment model.Comment
 
-		photoID := c.Param("commentID")
-		if photoID == "" {
+		commentID := c.Param("commentID")
+		if commentID == "" {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"message": "invalid parameter",
 				"error":   BadRequestError,
@@ -149,17 +156,23 @@ func (controller *commentController) Delete() gin.HandlerFunc {
 			return
 		}
 
-		controller.db.
+		if controller.db.
 			Preload("User").
-			Where("id = ?", photoID).
-			First(&comment)
-
-		if comment.UserID != GetUserIDFromContext(c) {
+			Where("id = ?", commentID).
+			First(&comment).RowsAffected == 0 {
 			c.JSON(http.StatusNotFound, gin.H{
 				"message": "item not found",
 				"error":   NotFoundError,
 			})
 
+			return
+		}
+
+		if comment.UserID != GetUserIDFromContext(c) {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"message": "unauthorized",
+				"error":   UnauthorizedError,
+			})
 			return
 		}
 
